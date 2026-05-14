@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AccessHome — ADA Room Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1A18;
+    --sage: #4A7C59;
+    --sage-light: #EAF2EC;
+    --rust: #C1440E;
+    --rust-light: #FAF0EB;
+    --gold: #C4973A;
+    --muted: #7A7A72;
+    --border: #DDD8CE;
+    --white: #FDFCFA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+  header { background: var(--ink); color: var(--white); padding: 18px 40px; display: flex; align-items: center; gap: 14px; }
+  .logo-mark { width: 36px; height: 36px; background: var(--sage); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+  header h1 { font-family: 'DM Serif Display', serif; font-size: 22px; }
+  header p { font-size: 13px; color: #9A9A92; margin-left: auto; font-weight: 300; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+  .intro { margin-bottom: 40px; }
+  .intro h2 { font-family: 'DM Serif Display', serif; font-size: 36px; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 12px; }
+  .intro h2 em { font-style: italic; color: var(--sage); }
+  .intro p { font-size: 16px; color: var(--muted); font-weight: 300; line-height: 1.6; max-width: 520px; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin-bottom: 20px; }
+  .step-label { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .card h3 { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 20px; }
+  .room-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .room-btn { border: 1.5px solid var(--border); background: var(--white); border-radius: 10px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .room-btn:hover { border-color: var(--sage); background: var(--sage-light); }
+  .room-btn.selected { border-color: var(--sage); background: var(--sage-light); color: var(--sage); }
+  .room-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+  .room-name { font-size: 13px; font-weight: 500; display: block; }
+  .needs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .need-btn { border: 1.5px solid var(--border); background: var(--white); border-radius: 10px; padding: 14px 16px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; transition: all 0.15s; font-family: 'DM Sans', sans-serif; width: 100%; }
+  .need-btn:hover { border-color: var(--sage); background: var(--sage-light); }
+  .need-btn.selected { border-color: var(--sage); background: var(--sage-light); }
+  .check-box { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; transition: all 0.15s; }
+  .need-btn.selected .check-box { background: var(--sage); border-color: var(--sage); }
+  .need-label { font-size: 14px; font-weight: 500; display: block; }
+  .need-sub { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+  .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .upload-zone:hover { border-color: var(--sage); background: var(--sage-light); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-zone p { font-size: 15px; color: var(--muted); }
+  .preview-img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 10px; display: none; margin-top: 16px; }
+  .analyze-btn { width: 100%; background: var(--sage); color: white; border: none; border-radius: 12px; padding: 18px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+  .analyze-btn:hover:not(:disabled) { background: #3d6b4a; transform: translateY(-1px); }
+  .analyze-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #results { display: none; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  .results-badge { background: var(--sage); color: white; font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+  .summary-box { background: var(--sage-light); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; font-size: 15px; line-height: 1.7; color: #2A4A35; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .mod-item { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 12px; background: var(--white); animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .mod-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .priority-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .priority-high { background: #FDECEA; color: var(--rust); }
+  .priority-medium { background: #FEF9EC; color: var(--gold); }
+  .priority-low { background: var(--sage-light); color: var(--sage); }
+  .mod-title { font-weight: 500; font-size: 15px; line-height: 1.4; }
+  .mod-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .mod-spec { font-size: 13px; color: var(--sage); margin-top: 8px; font-weight: 500; }
+  .resource-item { border-left: 3px solid var(--gold); padding: 16px 20px; background: var(--white); border-radius: 0 10px 10px 0; margin-bottom: 10px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .resource-name { font-weight: 500; font-size: 15px; margin-bottom: 4px; }
+  .resource-type { font-size: 12px; color: var(--gold); font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .resource-desc { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  .error-box { background: var(--rust-light); border: 1px solid #F5C9BB; border-radius: 12px; padding: 20px; color: var(--rust); font-size: 14px; display: none; margin-top: 12px; }
+  .reset-btn { background: transparent; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; color: var(--ink); transition: all 0.15s; margin-top: 12px; }
+  .reset-btn:hover { border-color: var(--ink); }
+  @media (max-width: 600px) {
+    header { padding: 16px 20px; }
+    header p { display: none; }
+    main { padding: 32px 16px 60px; }
+    .intro h2 { font-size: 28px; }
+    .room-grid { grid-template-columns: repeat(2, 1fr); }
+    .needs-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">♿</div>
+  <h1>AccessHome</h1>
+  <p>ADA Accessibility Analyzer</p>
+</header>
+
+<main>
+  <div class="intro">
+    <h2>Make your home <em>work for you</em></h2>
+    <p>Upload a photo of any room and tell us about your needs. Our AI will identify required modifications and connect you with funding programs.</p>
+  </div>
+
+  <div class="card">
+    <div class="step-label">Step 1 of 3</div>
+    <h3>Which room are you assessing?</h3>
+    <div class="room-grid">
+      <button class="room-btn" onclick="selectRoom(this, 'Bathroom')">
+        <span class="room-icon">🚿</span><span class="room-name">Bathroom</span>
+      </button>
+      <button class="room-btn" onclick="selectRoom(this, 'Kitchen')">
+        <span class="room-icon">🍳</span><span class="room-name">Kitchen</span>
+      </button>
+      <button class="room-btn" onclick="selectRoom(this, 'Entryway')">
+        <span class="room-icon">🚪</span><span class="room-name">Entryway</span>
+      </button>
+      <button class="room-btn" onclick="selectRoom(this, 'Bedroom')">
+        <span class="room-icon">🛏️</span><span class="room-name">Bedroom</span>
+      </button>
+      <button class="room-btn" onclick="selectRoom(this, 'Living Room')">
+        <span class="room-icon">🛋️</span><span class="room-name">Living Room</span>
+      </button>
+      <button class="room-btn" onclick="selectRoom(this, 'Hallway or Stairs')">
+        <span class="room-icon">🪜</span><span class="room-name">Hallway / Stairs</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step-label">Step 2 of 3</div>
+    <h3>What are your accessibility needs?</h3>
+    <div class="needs-grid">
+      <button class="need-btn" onclick="toggleNeed(this, 'mobility')">
+        <div class="check-box">✓</div>
+        <div><span class="need-label">Mobility</span><span class="need-sub">Wheelchair, walker, limited movement</span></div>
+      </button>
+      <button class="need-btn" onclick="toggleNeed(this, 'vision')">
+        <div class="check-box">✓</div>
+        <div><span class="need-label">Vision</span><span class="need-sub">Low vision or blindness</span></div>
+      </button>
+      <button class="need-btn" onclick="toggleNeed(this, 'hearing')">
+        <div class="check-box">✓</div>
+        <div><span class="need-label">Hearing</span><span class="need-sub">Deaf or hard of hearing</span></div>
+      </button>
+      <button class="need-btn" onclick="toggleNeed(this, 'cognitive')">
+        <div class="check-box">✓</div>
+        <div><span class="need-label">Cognitive</span><span class="need-sub">Memory, dementia, TBI</span></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step-label">Step 3 of 3</div>
+    <h3>Upload a photo of the room</h3>
+    <div class="upload-zone">
+      <input type="file" accept="image/*" id="photoInput" onchange="handlePhoto(event)">
+      <div class="upload-icon">📷</div>
+      <p><strong>Click to upload</strong> or drag and drop</p>
+      <p style="font-size:13px; margin-top:6px;">JPG, PNG supported</p>
+    </div>
+    <img id="previewImg" class="preview-img" alt="Room preview"/>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" disabled>
+    <div class="spinner" id="spinner"></div>
+    <span id="btnText">Analyze Room</span>
+  </button>
+  <div class="error-box" id="errorBox"></div>
+
+  <div id="results">
+    <hr>
+    <span class="results-badge">Analysis Complete</span>
+    <div class="summary-box" id="summaryBox"></div>
+    <div class="section-title">Recommended Modifications</div>
+    <div id="modList"></div>
+    <div class="section-title" style="margin-top:28px;">Funding &amp; Resources</div>
+    <div id="resourceList"></div>
+    <button class="reset-btn" onclick="resetApp()">← Analyze another room</button>
+  </div>
+</main>
+
+<script>
+let selectedRoom = '';
+let selectedNeeds = [];
+let photoBase64 = '';
+let photoMime = '';
+
+function selectRoom(btn, room) {
+  document.querySelectorAll('.room-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedRoom = room;
+  checkReady();
+}
+
+function toggleNeed(btn, need) {
+  btn.classList.toggle('selected');
+  if (btn.classList.contains('selected')) {
+    if (!selectedNeeds.includes(need)) selectedNeeds.push(need);
+  } else {
+    selectedNeeds = selectedNeeds.filter(n => n !== need);
+  }
+}
+
+function handlePhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  photoMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = e => {
+    photoBase64 = e.target.result.split(',')[1];
+    const preview = document.getElementById('previewImg');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    checkReady();
+  };
+  reader.readAsDataURL(file);
+}
+
+function checkReady() {
+  document.getElementById('analyzeBtn').disabled = !(selectedRoom && photoBase64);
+}
+
+async function analyze() {
+  const btn = document.getElementById('analyzeBtn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btnText');
+
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Analyzing your room…';
+
+  const needsList = selectedNeeds.length > 0 ? selectedNeeds.join(', ') : 'general accessibility';
+
+  const prompt = `You are an ADA home modification expert. Analyze this photo of a ${selectedRoom} for someone with these accessibility needs: ${needsList}.
+
+Respond ONLY with a valid JSON object, no markdown or preamble:
+{
+  "summary": "2-3 sentence overall assessment",
+  "modifications": [
+    {
+      "title": "Short modification name",
+      "priority": "high|medium|low",
+      "description": "What needs to change and why",
+      "spec": "Specific ADA measurement or standard"
+    }
+  ],
+  "resources": [
+    {
+      "name": "Program name",
+      "type": "Federal|State|Nonprofit|VA",
+      "description": "Who qualifies and what it covers"
+    }
+  ]
+}
+
+Include 3-6 modifications specific to what you see. Include 3-5 real funding resources (HUD, Medicaid waivers, USDA, Area Agency on Aging, VA).`;
+
+  try {
+    // Calls our secure backend — API key never exposed
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: photoMime, data: photoBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'API error ' + response.status);
+
+    const text = data.content.find(b => b.type === 'text')?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderResults(parsed);
+
+  } catch (err) {
+    showError('Something went wrong: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Analyze Room';
+    checkReady();
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.style.display = 'block';
+}
+
+function renderResults(data) {
+  document.getElementById('summaryBox').textContent = data.summary || '';
+
+  const modList = document.getElementById('modList');
+  modList.innerHTML = '';
+  (data.modifications || []).forEach((mod, i) => {
+    const div = document.createElement('div');
+    div.className = 'mod-item';
+    div.style.animationDelay = (i * 0.08) + 's';
+    div.innerHTML = `
+      <div class="mod-header">
+        <span class="priority-badge priority-${mod.priority}">${mod.priority} priority</span>
+        <span class="mod-title">${mod.title}</span>
+      </div>
+      <p class="mod-desc">${mod.description}</p>
+      ${mod.spec ? `<p class="mod-spec">📐 ${mod.spec}</p>` : ''}
+    `;
+    modList.appendChild(div);
+  });
+
+  const resList = document.getElementById('resourceList');
+  resList.innerHTML = '';
+  (data.resources || []).forEach((res, i) => {
+    const div = document.createElement('div');
+    div.className = 'resource-item';
+    div.style.animationDelay = (i * 0.08 + 0.3) + 's';
+    div.innerHTML = `
+      <div class="resource-type">${res.type}</div>
+      <div class="resource-name">${res.name}</div>
+      <p class="resource-desc">${res.description}</p>
+    `;
+    resList.appendChild(div);
+  });
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetApp() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('previewImg').style.display = 'none';
+  document.getElementById('photoInput').value = '';
+  document.querySelectorAll('.room-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.need-btn').forEach(b => b.classList.remove('selected'));
+  selectedRoom = ''; selectedNeeds = []; photoBase64 = ''; photoMime = '';
+  checkReady();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
